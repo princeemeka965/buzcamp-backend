@@ -17,8 +17,7 @@ const allowCrossDomain = function (req, res, next) {
 }
 
 app.use(allowCrossDomain);
-
-
+app.use(express.static('public')); //to access the files in public folder
 
 
 
@@ -30,6 +29,18 @@ app.use(allowCrossDomain);
 var users = require('./hr/users.js');
 
 app.use('/hr', users);
+
+
+var newsfeed = require('./feed/feed.js');
+
+app.use('/feed', newsfeed);
+
+
+
+
+
+
+
 
 
 
