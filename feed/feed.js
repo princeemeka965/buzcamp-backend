@@ -4,6 +4,7 @@ var mysql = require('mysql');
 var multer = require('multer');
 var sharp = require('sharp');
 var path = require('path');
+var MulterSharpResizer = require("multer-sharp-resizer");
 
 
 //create database connection
@@ -19,35 +20,146 @@ conn.connect((err) => {
     if (err) throw err;
     console.log('Mysql Connected...');
 });
+ 
 
 
 
 
 
-var storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, 'public/media/t/v16')
-    },
-    filename: function (req, file, cb) {
-        cb(null, Date.now() + '_' + Math.floor(Math.random() * 10000000) + '-' + file.originalname)
-    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const multerStorage = multer.memoryStorage();
+
+const upload = multer({
+    storage: multerStorage,
 });
 
-var upload = multer({ storage: storage });
+const uploadFiles = upload.array("file", 5);
+
+const uploadImages = (req, res, next) => {
+    uploadFiles(req, res, err => {
+        if (err instanceof multer.MulterError) {
+            if (err.code === "LIMIT_UNEXPECTED_FILE") {
+                return res.send("Too many files to upload.");
+            }
+        } else if (err) {
+            return res.send(err);
+        }
+
+        next();
+    });
+
+};
+
+const resizeImages = async (req, res, next) => {
+    if (!req.files) return next();
+
+    req.body.file = [];
+    await Promise.all(
+        req.files.map(async file => {
+            const filename = file.originalname.replace(/\..+$/, "");
+            const newFilename = `bz_${Date.now()}_${Math.floor(Math.random() * 10000000)}.jpeg`;
+
+            await sharp(file.buffer)
+                .resize(600)
+                .toFormat("jpeg")
+                .jpeg({ quality: 100 })
+                .withMetadata()
+                .toFile(`public/media/t/v16/${newFilename}`);
 
 
-// file upload api
-router.post('/create-media', upload.array('file'), async (req, res) => {
-    
-    await sharp(req.file.path)
-        .resize(200, 200)
-        .jpeg({ quality: 90 })
-        .toFile(
-            path.resolve(req.file.destination, 'resized', file)
-        )
+            req.body.file.push(`${newFilename}`);
+        })
+    );
 
-    res.status(200).send(req.files)
-    })
+    next();
+};
+
+
+const getResult = async (req, res) => {
+    if (req.body.file.length <= 0) {
+        return res.send(`You must select at least 1 image.`);
+    }
+
+    var bodyImages = [];
+     req.body.file
+        .map(image => {
+            const imageFile = sharp(`public/media/t/v16/${image}`);
+            var width;
+            var height;
+            var watermark;
+            var dimensions;
+            var setUrl;
+
+            imageFile
+                .metadata()
+                .then(function (metadata) {
+                    width = Math.round(metadata.width);
+                    height = Math.round(metadata.height);
+                    watermark = `${metadata.density}x${metadata.orientation}`;
+                    dimensions = `${width}.${height}`;
+                    setUrl = `${generateString(70)}`;
+                })
+
+            // program to generate random strings
+
+            // declare all characters
+            const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_[$]&';
+
+            function generateString(length) {
+                let result = ' ';
+                const charactersLength = characters.length;
+                for (let i = 0; i < length; i++) {
+                    result += characters.charAt(Math.floor(Math.random() * charactersLength));
+                }
+
+                return result;
+            }
+
+            bodyImages.push(`${image}?ndQ_v=${width}&nc_r=${watermark}&bzcdn__nnRs=${setUrl}`);
+        })
+
+
+    const images = bodyImages
+        .map(image => "" + image + "")
+        .join("");
+
+    return res.status(200).json({
+        status: "success",
+        data: {
+            gallery: images,
+        },
+    });
+};
+
+
+
+router.post("/create-media", uploadImages, resizeImages, getResult);
+
+
+
+
+
+ 
+
+
 
 
 
@@ -55,21 +167,13 @@ router.post('/create-media', upload.array('file'), async (req, res) => {
 
 router.post('/create-status', (req, res) => {
 
-    const photoPayLoad = req.body.photos;
-
-    var parsePhotos;
-
-    if(photoPayLoad.length > 1) {
-        parsePhotos = photoPayLoad.toString();
-    }
-    else {
-        parsePhotos = photoPayLoad;
-    }
-
     let data = {
         content: req.body.content,
         duration: req.body.duration,
-        photos: parsePhotos
+        largephotos: req.body.largephotos,
+        mediumphotos: req.body.mediumphotos,
+        smallphotos: req.body.smallphotos,
+        video: req.body.video
     };
 
     let sql_2 = "INSERT INTO status SET ?";
@@ -90,3 +194,4 @@ router.post('/create-status', (req, res) => {
 module.exports = router;
 
 
+ 
