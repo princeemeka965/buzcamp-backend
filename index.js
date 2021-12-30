@@ -1,8 +1,8 @@
 var express = require('express');
 var app = express();
 var sharp = require('sharp');
+var path = require('path');
 const { fromString } = require('uuidv4');
-
 
 
 //To parse URL encoded data
@@ -20,10 +20,16 @@ const allowCrossDomain = function (req, res, next) {
 }
 
 app.use(allowCrossDomain);
-app.use(express.static('public')); //to access the files in public folder
+ 
+app.use(express.static('public'));
+app.use('/images', express.static('public/media/t/v16'));
 
 
-app.use('/media', express.static('public/media/t/v16'));
+
+
+
+
+
 
 
 
@@ -59,11 +65,28 @@ app.use('/feed', newsfeed);
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 app.get('/mediaInfo', function(req, res) {
-    const image = sharp(`public/media/t/v16/bz_1638130666512_1121098.jpeg`);
+    const image = sharp(`public/media/t/v16/bz_1638176080494_5906823.jpeg`);
     var width;
     var height;
-
+ 
     image
         .metadata()
         .then(function (metadata) {
@@ -74,7 +97,8 @@ app.get('/mediaInfo', function(req, res) {
                 features: {
                     watermark: `${metadata.density}x${metadata.orientation}`,
                     dimensions: `${width}.${height}`,
-                    setUrl: `${generateString(70)}`
+                    setUrl: `${generateString(70)}`,
+                    data: metadata
                 },
             });
         })
