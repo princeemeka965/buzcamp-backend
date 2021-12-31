@@ -1,6 +1,7 @@
 var express = require('express');
 var router = express.Router();
 var mysql = require('mysql');
+var http = require('http');
 
 
 //create database connection
@@ -22,9 +23,21 @@ conn.connect((err) => {
 
 
 
+
+
+
 router.get('/things/:name/:id', function (req, res) {
     res.send('id: ' + req.params.id + ' and name: ' + req.params.name);
 });
+
+
+
+
+
+
+
+
+
 
 
 router.get('/users', function (req, res) {
@@ -38,6 +51,12 @@ router.get('/users', function (req, res) {
         }
     });
 });
+
+
+
+
+
+
 
 
 router.post('/createuser', function (req, res) {
@@ -70,6 +89,38 @@ router.post('/createuser', function (req, res) {
         }
     });
 });
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+router.post('/updateuser', function (req, res) {
+    let data = {
+        username: req.body.username,
+        active: req.body.active
+    };
+    let sql = `UPDATE users SET active = '${req.body.active}' WHERE username = '${req.body.username}'`;
+    let fquery = conn.query(sql, (err, results) => {
+        console.log(results.affectedRows);
+        res.status(200).send({ success: true, msg: "updated successfully" });
+    });
+});
+
+
+
+
 
 
 

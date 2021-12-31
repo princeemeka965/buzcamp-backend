@@ -4,7 +4,6 @@ var mysql = require('mysql');
 var multer = require('multer');
 var sharp = require('sharp');
 var path = require('path');
-var MulterSharpResizer = require("multer-sharp-resizer");
 
 
 //create database connection
