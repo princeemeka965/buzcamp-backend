@@ -7,10 +7,10 @@ var path = require("path");
 
 //create database connection
 const conn = mysql.createConnection({
-  host: "db4free.net",
-  user: "buzcamp",
-  password: "+5k8Ww#Mv9SRQwN",
-  database: "buzcamp_db",
+  host: "sql5.freesqldatabase.com",
+  user: "sql5508259",
+  password: "aHlVgvCI9I",
+  database: "sql5508259",
 });
 
 //connect to database
