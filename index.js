@@ -1,14 +1,30 @@
 var express = require("express");
+var session = require('express-session');
 var app = express();
 var sharp = require("sharp");
 var path = require("path");
 const { fromString } = require("uuidv4");
+const cookieParser = require("cookie-parser");
+require('dotenv').config();
 
 //To parse URL encoded data
 app.use(express.urlencoded({ extended: false }));
 
 //To parse json data
 app.use(express.json());
+
+// cookie parser middleware
+app.use(cookieParser());
+
+const oneDay = 1000 * 60 * 60 * 24;
+
+app.use(session({
+  secret: `${process.env.BUZCAMP_AUTH_ID}`,
+  saveUninitialized: true,
+  cookie: { maxAge: oneDay },
+  resave: false
+}));
+
 
 const allowCrossDomain = function (req, res, next) {
   res.header("Access-Control-Allow-Origin", "*");
