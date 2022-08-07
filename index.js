@@ -1,11 +1,12 @@
 var express = require("express");
-var session = require('express-session');
 var app = express();
+var cors = require("cors");
 var sharp = require("sharp");
 var path = require("path");
 const { fromString } = require("uuidv4");
 const cookieParser = require("cookie-parser");
-require('dotenv').config();
+useragent = require("express-useragent");
+require("dotenv").config();
 
 //To parse URL encoded data
 app.use(express.urlencoded({ extended: false }));
@@ -16,15 +17,8 @@ app.use(express.json());
 // cookie parser middleware
 app.use(cookieParser());
 
-const oneDay = 1000 * 60 * 60 * 24;
-
-app.use(session({
-  secret: `${process.env.BUZCAMP_AUTH_ID}`,
-  saveUninitialized: true,
-  cookie: { maxAge: oneDay },
-  resave: false
-}));
-
+//user-agent middleware
+app.use(useragent.express());
 
 const allowCrossDomain = function (req, res, next) {
   res.header("Access-Control-Allow-Origin", "*");
@@ -33,12 +27,16 @@ const allowCrossDomain = function (req, res, next) {
   next();
 };
 
+const corsOptions = {
+  origin: "*", //Your Client, do not write '*'
+  credentials: true,
+};
+app.use(cors(corsOptions));
+
 app.use(allowCrossDomain);
 
 app.use(express.static("public"));
 app.use("/images", express.static("public/media/t/v16"));
-
-
 
 /**
  * Route to directories containing Endpoints
@@ -47,8 +45,6 @@ app.use("/images", express.static("public/media/t/v16"));
 var signUp = require("./authentication/signup.js");
 
 app.use("/authenticate", signUp);
-
-
 
 // Other routes here
 app.get("*", function (req, res) {
