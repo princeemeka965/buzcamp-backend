@@ -13,7 +13,7 @@ const IN_PROD = process.env.NODE_ENV === "production";
 const TWO_HOURS = 1000 * 60 * 60 * 4;
 
 const options = {
-  connectionLimit: 30,
+  connectionLimit: 2000,
   password: process.env.BUZCAMP_DB_PASSWORD,
   user: process.env.BUZCAMP_DB_USER,
   database: process.env.BUZCAMP_DB,
@@ -44,7 +44,11 @@ router.use(
 var sql =
   "CREATE TABLE users (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255), nationality VARCHAR(255), state VARCHAR(255), gender VARCHAR(255), school VARCHAR(255), department VARCHAR(255), email VARCHAR(255), username VARCHAR(255), password VARCHAR(255), userId VARCHAR(255), verification VARCHAR(255), token VARCHAR(255), tokenElapse VARCHAR(255))";
 conn.query(sql, function (err, result) {
-  console.log("Table created");
+  if (result) {
+    console.log("Table created");
+  } else if (err) {
+    console.log(err);
+  }
 });
 
 router.post("/createuser", function (req, res, next) {
@@ -186,9 +190,6 @@ router.post("/verifyAccount", function (req, res, next) {
 
   var userId = "";
 
-  var browser = CryptoJS.AES.decrypt(req.body.__ysY7pi, "my-secret-key@123");
-  var decryptedBrowser = browser.toString(CryptoJS.enc.Utf8);
-
   let sql = `SELECT * FROM users WHERE token = '${token}' AND tokenElapse < '${currentTime}'`;
   let fquery = conn.query(sql, (err, results) => {
     results.forEach((result) => {
@@ -196,12 +197,6 @@ router.post("/verifyAccount", function (req, res, next) {
     });
 
     if (results.length > 0) {
-      //encrypt session ID
-      let encodeSession = CryptoJS.AES.encrypt(
-        req.sessionID,
-        "my-secret-key@123"
-      );
-
       let sql_1 = `UPDATE users SET verification = '${req.sessionID}', token = '', tokenElapse = '' WHERE userId = '${userId}'`;
       conn.query(sql_1);
 
@@ -211,31 +206,27 @@ router.post("/verifyAccount", function (req, res, next) {
       }', '${JSON.stringify(req.session)}')`;
       let query = conn.query(sql_2, function (err, result) {
         if (err) {
-          res
-            .status(405)
-            .send({
-              success: false,
-              subscribed: false,
-              message: "Error in validating OTP",
-            });
+          res.status(405).send({
+            success: false,
+            subscribed: false,
+            message: "Error in validating OTP",
+          });
         } else {
-          res
-            .status(200)
-            .send({
-              success: true,
-              subscribed: true,
-              data: { _tldI: `${encodeSession}` },
-            });
+          res.cookie("_bz_meta_ip", `${req.sessionID}`, {
+            expire: 864000000 + Date.now(),
+          });
+          res.status(200).send({
+            success: true,
+            subscribed: true,
+          });
         }
       });
     } else {
-      res
-        .status(405)
-        .send({
-          success: false,
-          subscribed: false,
-          message: "OTP entered is invalid",
-        });
+      res.status(405).send({
+        success: false,
+        subscribed: false,
+        message: "OTP entered is invalid",
+      });
     }
   });
 });
@@ -246,7 +237,8 @@ router.post("/users", function (req, res, next) {
 });
 
 router.get("/agents", function (req, res) {
-  res.status(200).send({ data: req.useragent });
+  res.cookie("name", "express").send("cookie set");
+  // res.status(200).send({ data: req.useragent });
 });
 
 module.exports = router;

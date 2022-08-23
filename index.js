@@ -4,7 +4,7 @@ var cors = require("cors");
 var sharp = require("sharp");
 var path = require("path");
 const { fromString } = require("uuidv4");
-const cookieParser = require("cookie-parser");
+cookieParser = require("cookie-parser");
 useragent = require("express-useragent");
 require("dotenv").config();
 
