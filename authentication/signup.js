@@ -7,7 +7,11 @@ var CryptoJS = require("crypto-js");
 const cookieParser = require("cookie-parser");
 const axios = require("axios");
 const mysqlStore = require("express-mysql-session")(session);
+const jwt = require('jsonwebtoken');
+const jwt_decode = require('jwt-decode');
 require("dotenv").config();
+
+let jwtSecretKey = process.env.JWT_SECRET_KEY;
 
 const IN_PROD = process.env.NODE_ENV === "production";
 const TWO_HOURS = 1000 * 60 * 60 * 4;
@@ -58,12 +62,6 @@ router.post("/createuser", function (req, res, next) {
   var nation = CryptoJS.AES.decrypt(req.body.__rdNati, "ecret-key@123");
   var decryptedNation = nation.toString(CryptoJS.enc.Utf8);
 
-  var state = CryptoJS.AES.decrypt(req.body.__rdLoc, "my-secret-key@123");
-  var decryptedState = state.toString(CryptoJS.enc.Utf8);
-
-  var gender = CryptoJS.AES.decrypt(req.body.__istGe, "my-secret-key@123");
-  var decryptedGender = gender.toString(CryptoJS.enc.Utf8);
-
   var school = CryptoJS.AES.decrypt(req.body.__isSch, "my-secret-key@123");
   var decryptedSchool = school.toString(CryptoJS.enc.Utf8);
 
@@ -93,8 +91,6 @@ router.post("/createuser", function (req, res, next) {
   let data = {
     name: decryptedName,
     nationality: decryptedNation,
-    state: decryptedState,
-    gender: decryptedGender,
     school: decryptedSchool,
     department: decryptedDepartment,
     email: decryptedEmail,
@@ -106,16 +102,17 @@ router.post("/createuser", function (req, res, next) {
     tokenElapse: tokenExpires,
   };
 
-  let sql = `SELECT * FROM users WHERE username = '${data.username}'`;
+  let sql = `SELECT * FROM users WHERE username = '${data.username}' OR email = '${data.email}'`;
   let fquery = conn.query(sql, (err, results) => {
     if (results.length > 0) {
+      console.log(results);
       res.status(405).send({
         success: false,
         message: `User with username '${data.username}' already exists`,
       });
     } else {
-      let sql_2 = `INSERT INTO users (name, nationality, state, gender, school, department, email, username, password, userId, verification, token, tokenElapse) 
-      VALUES ('${data.name}', '${data.nationality}', '${data.state}', '${data.gender}', '${data.school}', '${data.department}',
+      let sql_2 = `INSERT INTO users (name, nationality, school, department, email, username, password, userId, verification, token, tokenElapse) 
+      VALUES ('${data.name}', '${data.nationality}', '${data.school}', '${data.department}',
       '${data.email}', '${data.username}', '${data.password}', '${data.userId}', '${data.verification}', '${data.token}', '${data.tokenElapse}')`;
 
       let query = conn.query(sql_2, function (err, result) {
@@ -123,16 +120,18 @@ router.post("/createuser", function (req, res, next) {
           res
             .status(400)
             .send({ success: false, message: "Error in creating User" });
-        } else {
+        }
+        else {
+          let tokenData = {
+            email: `${data.email}`,
+          }
+
+          const token = jwt.sign(tokenData, jwtSecretKey);
+
           res.status(200).send({
             success: true,
             message: "Account created successfully",
-            data: {
-              __kTcLd: CryptoJS.AES.encrypt(
-                `${tokenNo}`,
-                "my-secret-key@123"
-              ).toString(),
-            },
+            data: {__tkI9shaB: token}
           });
 
           const dataBody = {
@@ -183,6 +182,7 @@ router.post("/createuser", function (req, res, next) {
   });
 });
 
+
 router.post("/verifyAccount", function (req, res, next) {
   var currentTime = Math.floor(Date.now() / 1000).toString();
 
@@ -203,21 +203,27 @@ router.post("/verifyAccount", function (req, res, next) {
       let sql_2 = `INSERT INTO sessions (session_id, expires, data) 
       VALUES ('${req.sessionID}', '${
         req.session.cookie.originalMaxAge
-      }', '${JSON.stringify(req.session)}')`;
-      let query = conn.query(sql_2, function (err, result) {
+        }', '${JSON.stringify(req.session)}')`;
+      
+      conn.query(sql_2, function (err, result) {
         if (err) {
           res.status(405).send({
             success: false,
             subscribed: false,
             message: "Error in validating OTP",
           });
-        } else {
-          res.cookie("_bz_meta_ip", `${req.sessionID}`, {
-            expire: 864000000 + Date.now(),
-          });
+        }
+        else {
+          let tokenData = {
+            session: `${req.sessionID}`,
+          }
+
+          const jsToken = jwt.sign(tokenData, jwtSecretKey);
+
           res.status(200).send({
             success: true,
             subscribed: true,
+            data: { __tkI9shaB: jsToken }
           });
         }
       });
@@ -231,14 +237,81 @@ router.post("/verifyAccount", function (req, res, next) {
   });
 });
 
-router.post("/users", function (req, res, next) {
-  console.log(JSON.stringify(req.headers));
-  res.status(200).send({ success: true, subscribed: req.session.userId });
+
+
+router.post("/login", function (req, res, next) {
+  var userId = "";
+
+  var username = CryptoJS.AES.decrypt(req.body.__ibTser, "my-secret-key@23");
+  var decryptedUsername = username.toString(CryptoJS.enc.Utf8);
+
+  var password = CryptoJS.AES.decrypt(req.body.__rPekey, "my-secret-key@123");
+  var decryptedPassword = password.toString(CryptoJS.enc.Utf8);
+
+  let data = {
+    username: decryptedUsername,
+    password: decryptedPassword,
+  };
+
+  let sql = `SELECT * FROM users WHERE username = '${data.username}' AND password = '${data.password}'`;
+  conn.query(sql, (err, results) => {
+
+    results.forEach((result) => {
+      userId = result.userId;
+    });
+
+    if (results.length > 0) {
+      let sql_1 = `UPDATE users SET verification = '${req.sessionID}', WHERE userId = '${userId}'`;
+      conn.query(sql_1);
+
+      let sql_2 = `INSERT INTO sessions (session_id, expires, data) 
+            VALUES ('${req.sessionID}', '${req.session.cookie.originalMaxAge
+        }', '${JSON.stringify(req.session)}')`;
+
+      conn.query(sql_2, function (err, result) {
+        if (err) {
+          res.status(405).send({
+            success: false,
+            subscribed: false,
+            message: "Login Failed... Please try again later",
+          });
+        }
+        else {
+          let tokenData = {
+            session: `${req.sessionID}`,
+          }
+
+          const jsToken = jwt.sign(tokenData, jwtSecretKey);
+
+          res.status(200).send({
+            success: true,
+            subscribed: true,
+            data: { __tkI9shaB: jsToken }
+          });
+        }
+      });
+    };
+  });
 });
 
-router.get("/agents", function (req, res) {
-  res.cookie("name", "express").send("cookie set");
-  // res.status(200).send({ data: req.useragent });
+
+
+router.get("/_grantprm/:id", (req, res) => {
+  const token = req.params.id;
+
+  var decoded = jwt_decode(token);
+  
+  let sql = `SELECT * FROM users WHERE email = '${decoded.email}' AND token != ''`;
+  conn.query(sql, (err, results) => {
+    if (results.length === 0) {
+    }
+    else {
+      res.status(200).send({
+        success: true,
+        subscribed: false,
+      });
+    }
+  })
 });
 
 module.exports = router;
