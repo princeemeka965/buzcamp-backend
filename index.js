@@ -44,7 +44,11 @@ app.use("/images", express.static("public/media/t/v16"));
 
 var signUp = require("./authentication/signup.js");
 
+var onBoard = require("./onboarding/init.js");
+
 app.use("/authenticate", signUp);
+
+app.use("/onboarding", onBoard);
 
 // Other routes here
 app.get("*", function (req, res) {
