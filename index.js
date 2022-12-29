@@ -38,19 +38,22 @@ app.use("/images", express.static("public/media/t/v16"));
 /**
  * Route to authentication Endpoints
  */
- import signUp from "./authentication/signup.js";
+import signUp from "./authentication/signup.js";
 
- import verification from "./authentication/verification.js";
+import verification from "./authentication/verification.js";
 
- import login from "./authentication/login.js";
+import login from "./authentication/login.js";
+
+import passwordToken from "./authentication/password-token.js";
 
 
 app.use("/authenticate/", signUp);
 
-app.use("/authenticate/",verification);
+app.use("/authenticate/", verification);
 
-app.use("/authenticate/",login);
+app.use("/authenticate/", login);
 
+app.use("/authenticate/", passwordToken);
 
 
 
