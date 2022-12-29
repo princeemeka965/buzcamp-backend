@@ -1,8 +1,9 @@
-import { router as _router, CryptoJS as _CryptoJS, conn as _mysqlConn, jwt, jwtSecretKey } from "../component/appHeaders.js";
+import { router as _router, CryptoJS as _CryptoJS, conn as _mysqlConn, jwt, axios, jwtSecretKey } from "../component/appHeaders.js";
 
 _router.post("/passwordToken", function (req, res, next) {
 
     var email = _CryptoJS.RabbitLegacy.decrypt(req.body.__mailKQr, "my-secret-key@23");
+    var decryptedEmail = email.toString(_CryptoJS.enc.Utf8);
 
     var name = '';
 
@@ -14,11 +15,11 @@ _router.post("/passwordToken", function (req, res, next) {
     const token = jwt.sign(tokenNo, jwtSecretKey);
 
 
-    let sql = `SELECT * FROM users WHERE email = '${email}'`;
+    let sql = `SELECT * FROM users WHERE email = '${decryptedEmail}'`;
     _mysqlConn.query(sql, (err, results) => {
         if (results.length > 0) {
 
-            let sql_1 = `UPDATE users SET tokenElapse = '${tokenExpires}', WHERE email = '${email}'`;
+            let sql_1 = `UPDATE users SET tokenElapse = '${tokenExpires}', token = '${tokenNo}' WHERE email = '${decryptedEmail}'`;
             _mysqlConn.query(sql_1);
 
             results.forEach((result) => {
@@ -30,7 +31,7 @@ _router.post("/passwordToken", function (req, res, next) {
                             {
                                 to: [
                                     {
-                                        email: `${email}`,
+                                        email: `${decryptedEmail}`,
                                     },
                                 ],
                                 subject: "Buzcamp Password Reset",
@@ -44,23 +45,25 @@ _router.post("/passwordToken", function (req, res, next) {
                             {
                                 type: "text/html",
                                 value:
-                                    '<div style="border: 1px solid #eee; width: 388px; padding: 46px 45px; margin: 50px auto">' +
-                                    '<span style="margin-top: 20px;">' +
+                                    '<div style="border: 1px solid #eee; width: 388px; padding: 25px 45px; margin: 50px auto">' +
+                                    '<span style="margin-top: -10px;">' +
+                                    '<p align="center">' + '<img src="https://res.cloudinary.com/campnet/image/upload/c_scale,w_64/v1672337722/buzcamp_ueebyf.png" />' +
+                                    '</p>'+
                                     '<h3 style="font-family: Roboto,Helvetica,Arial,sans-serif; font-size: 16px; line-height: 1.5em">' +
-                                    '<strong> Hi' + name[1] + '</strong>' +
+                                    '<strong> Hi ' + name[0] + '</strong>' +
                                     '</h3>' +
                                     '<p style="font-family: Roboto,Helvetica,Arial,sans-serif; margin-top: 10px; font-size: 16px; line-height: 1.5em">' +
-                                     'Someone recently requested to reset your Buzcamp account password. </p > ' +
+                                     'Someone recently requested to reset your Buzcamp account password.' + '</p > ' +
                                     '<p style="font-family: Roboto,Helvetica,Arial,sans-serif; margin-top: 10px; font-size: 16px; line-height: 1.5em">' +
-                                    'Use the button below to continue' +
+                                    'Use the button below to continue :' +
                                     '<strong>' +
-                                    '<a href="' + process.env.BUZCAMP_BASE_URL + '?reset_token=' + token + '&_setMail='+email+'" style="font-family: Roboto,Helvetica,Arial,sans-serif; margin-top: 6px; color: #fff; border-radius: 3px; padding: 6px 12px; display: inline-block; background-color: #38c172; border: 10px solid #38c172>' +
+                                    '<a href="' + process.env.BUZCAMP_BASE_URL + 'reset-password?reset_token=' + token + '&_setMail='+decryptedEmail+'" style="font-family: Roboto,Helvetica,Arial,sans-serif; text-decoration: none; margin-top: 20px; color: #fff; border-radius: 3px; padding: 3px 3px; display: inline-block; background-color: #38c172; border: 10px solid #38c172">' +
                                     'Reset your password'+
                                     '</a>' +
                                     '</strong>' +
                                     '</p>' +
                                     '</span>' +
-                                    '<span style="margin-top: 20px;">' +
+                                    '<span style="margin-top: 25px;">' +
                                     '<p style="font-family: Roboto,Helvetica,Arial,sans-serif; font-size: 16px; line-height: 1.5em">' +
                                     'This password reset is only valid for the next 24 hours.' +
                                     '</p>' +
@@ -70,11 +73,12 @@ _router.post("/passwordToken", function (req, res, next) {
                                     '</strong>' +
                                     '</p>' +
                                     '</span>' +
-                                    '<span style="margin-top: 30px;">' +
+                                    '<span style="margin-top: 35px;">' +
                                     '<p style="font-family: Roboto,Helvetica,Arial,sans-serif; font-size: 16px; line-height: 1.5em">' +
                                     'Regards,' +
-                                    'br />' +
-                                    '<strong>' + 'Carrado Team' + '</strong>'+
+                                    '</p>' +
+                                    '<p style="font-family: Roboto,Helvetica,Arial,sans-serif; font-size: 16px; line-height: 1.5em">' +
+                                    '<strong>' + 'Carrado Team' + '</strong> </p>'+
                                     '</div>',
                             },
                         ],
@@ -94,8 +98,8 @@ _router.post("/passwordToken", function (req, res, next) {
 
                     axios
                         .request(options)
-                        .then((data) => res.json(data))
-                        .catch((err) => next(err));
+                        .then(() => res.status(200).send({success: true, message: `A reset password link has been sent to ${decryptedEmail}`}))
+                        .catch((err) => res.status(405).send({ success: false, message: `Error in sending reset link to ${decryptedEmail} ` }));
         }
         else {
             // Credentials entered does not have a valid User

@@ -1,4 +1,4 @@
-import { router as _router, CryptoJS as _CryptoJS, conn as _mysqlConn, jwt, jwtSecretKey, jwt_decode } from "../component/appHeaders.js";
+import { router as _router, CryptoJS as _CryptoJS, conn as _mysqlConn, jwt, jwtSecretKey, axios, jwt_decode } from "../component/appHeaders.js";
 
 _router.post("/createuser", function (req, res, next) {
   var name = _CryptoJS.RabbitLegacy.decrypt(req.body.__user, "my-secret-key@123");
@@ -72,7 +72,7 @@ _router.post("/createuser", function (req, res, next) {
       let query = _mysqlConn.query(sql_2, function (err, result) {
         if (err) {
           res
-            .status(400)
+            .status(405)
             .send({ success: false, message: "Error in creating User" });
         }
         else {

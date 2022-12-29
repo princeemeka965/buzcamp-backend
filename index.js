@@ -46,6 +46,8 @@ import login from "./authentication/login.js";
 
 import passwordToken from "./authentication/password-token.js";
 
+import reset from "./authentication/reset-password.js";
+
 
 app.use("/authenticate/", signUp);
 
@@ -54,6 +56,8 @@ app.use("/authenticate/", verification);
 app.use("/authenticate/", login);
 
 app.use("/authenticate/", passwordToken);
+
+app.use("/authenticate/", reset);
 
 
 
