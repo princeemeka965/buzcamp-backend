@@ -17,19 +17,19 @@ app.use(cookieParser());
 
 
 const allowCrossDomain = function (req, res, next) {
-  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Origin", "https://buzcamp.com");
   res.header("Access-Control-Allow-Methods", "GET,PUT,POST,DELETE");
   res.header("Access-Control-Allow-Headers", "Content-Type");
   next();
 };
 
 const corsOptions = {
-  origin: "*", //Your Client, do not write '*'
+  origin: "https://buzcamp.com", //Your Client, do not write '*'
   credentials: true,
 };
 app.use(cors(corsOptions));
 
-app.use(allowCrossDomain);
+//app.use(allowCrossDomain);
 
 app.use(express.static("public"));
 app.use("/images", express.static("public/media/t/v16"));
