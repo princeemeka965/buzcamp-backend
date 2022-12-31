@@ -1,10 +1,11 @@
 import express, { urlencoded, json } from "express";
 var app = express();
-import cors from "cors";
 import sharp from "sharp";
 import path from "path";
 import { fromString } from "uuidv4";
 import cookieParser from 'cookie-parser';
+
+const cors = require('cors');
 
 //To parse URL encoded data
 app.use(urlencoded({ extended: false }));
@@ -16,20 +17,12 @@ app.use(json());
 app.use(cookieParser());
 
 
-const allowCrossDomain = function (req, res, next) {
-  res.header("Access-Control-Allow-Origin", "https://buzcamp.com");
-  res.header("Access-Control-Allow-Methods", "GET,PUT,POST,DELETE");
-  res.header("Access-Control-Allow-Headers", "Content-Type");
-  next();
-};
-
 const corsOptions = {
-  origin: "https://buzcamp.com", //Your Client, do not write '*'
-  credentials: true,
-};
+  origin: 'https://buzcamp.com',
+  credentials: true,            //access-control-allow-credentials:true
+  optionSuccessStatus: 200
+}
 app.use(cors(corsOptions));
-
-//app.use(allowCrossDomain);
 
 app.use(express.static("public"));
 app.use("/images", express.static("public/media/t/v16"));
@@ -72,4 +65,4 @@ app.get("*", function (req, res) {
   res.status(404).send("Sorry, this is an invalid URL.");
 });
 
-app.listen(7000);
+app.listen(443);
