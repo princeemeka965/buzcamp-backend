@@ -71,4 +71,4 @@ app.get("*", function (req, res) {
   res.status(404).send("Sorry, this is an invalid URL.");
 });
 
-app.listen(process.env.PORT || 8090);
+export default app
