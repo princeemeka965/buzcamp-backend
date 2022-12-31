@@ -46,4 +46,4 @@ router.use(
 );
 
 
-export { session, sql, conn, CryptoJS, router, http, cookieParser, axios, mysqlStore, jwt, jwt_decode, jwtSecretKey };
+export { session, conn, CryptoJS, router, http, cookieParser, axios, mysqlStore, jwt, jwt_decode, jwtSecretKey };
