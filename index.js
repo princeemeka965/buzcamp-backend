@@ -4,8 +4,9 @@ import sharp from "sharp";
 import path from "path";
 import { fromString } from "uuidv4";
 import cookieParser from 'cookie-parser';
+import cors from "cors";
 
-const cors = require('cors');
+app.use(cors());
 
 //To parse URL encoded data
 app.use(urlencoded({ extended: false }));
@@ -22,7 +23,10 @@ const corsOptions = {
   credentials: true,            //access-control-allow-credentials:true
   optionSuccessStatus: 200
 }
-app.use(cors(corsOptions));
+
+app.get("/", (req, res) => {
+  return res.send("Hello World");
+});
 
 app.use(express.static("public"));
 app.use("/images", express.static("public/media/t/v16"));
@@ -65,4 +69,4 @@ app.get("*", function (req, res) {
   res.status(404).send("Sorry, this is an invalid URL.");
 });
 
-app.listen(443);
+app.listen(7000);
