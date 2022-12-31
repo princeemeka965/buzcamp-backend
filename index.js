@@ -5,6 +5,8 @@ import path from "path";
 import { fromString } from "uuidv4";
 import cookieParser from 'cookie-parser';
 import cors from "cors";
+import dotenv from "dotenv";
+dotenv.config()
 
 app.use(cors());
 
@@ -69,4 +71,4 @@ app.get("*", function (req, res) {
   res.status(404).send("Sorry, this is an invalid URL.");
 });
 
-app.listen(7000);
+app.listen(process.env.PORT || 8090);
